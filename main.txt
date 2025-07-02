@@ -31,7 +31,7 @@ keysGui.Name = "KeysGui"
 keysGui.Enabled = false
 
 local moveFrame = Instance.new("Frame")
-moveFrame.Size = UDim2.new(0, 200, 0, 60)
+moveFrame.Size = UDim2.new(0, 260, 0, 80) -- maior para mobile
 moveFrame.Position = UDim2.new(0, 10, 0, 50)
 moveFrame.BackgroundTransparency = 0.5
 moveFrame.BackgroundColor3 = Color3.new(0, 0, 0)
@@ -49,8 +49,8 @@ local moveButtons = {}
 
 for i, key in ipairs(moveKeys) do
 	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(0, 30, 0, 40)
-	btn.Position = UDim2.new(0, (i-1)*35, 0, 20)
+	btn.Size = UDim2.new(0, 40, 0, 50)
+	btn.Position = UDim2.new(0, (i-1)*43, 0, 20)
 	btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 	btn.TextColor3 = Color3.new(1,1,1)
 	btn.Text = key
@@ -102,6 +102,8 @@ local rotPressed = {}
 
 local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
+
+local lastCamPosition = nil -- guarda a posição ao desligar
 
 local function atualizarCamera()
 	local maxPitch = math.rad(85)
@@ -215,20 +217,33 @@ local function desativarAntiskin()
 		freeCamConnection:Disconnect()
 		freeCamConnection = nil
 	end
-	
+
 	UserInputService.MouseBehavior = Enum.MouseBehavior.Default
-	
+
 	keysGui.Enabled = false
 	moveFrame.Visible = false
 	rotFrame.Visible = false
-	
+
 	restaurarPersonagem(LocalPlayer.Character)
-	
-	wait(0.1)
-	
+
+	-- Salva posição para teleportar depois
+	lastCamPosition = camPosition
+
+	-- Teleportar personagem antes de resetar
+	if lastCamPosition and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+		LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(lastCamPosition)
+	end
+
+	-- Recarrega personagem (reseta)
 	LocalPlayer:LoadCharacter()
-	
+
+	-- Espera o personagem aparecer
 	LocalPlayer.CharacterAdded:Wait()
+
+	-- Teleporta de novo depois que carregou para garantir a posição
+	if lastCamPosition and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+		LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(lastCamPosition)
+	end
 end
 
 button.MouseButton1Click:Connect(function()
