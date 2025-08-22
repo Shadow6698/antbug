@@ -1,0 +1,68 @@
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Lista de nomes/classes a bloquear
+local blacklist = {
+    {Name = "water", Class = "Part"},
+}
+
+-- Função para neutralizar a parte
+local function neutralize(part)
+    if part and part:IsA("BasePart") then
+        -- corta qualquer efeito físico
+        pcall(function()
+            part.Anchored = true
+            part.CanCollide = false
+            part.Massless = true
+            part.Transparency = 1
+            part:ClearAllChildren()
+        end)
+        -- opcional: deletar
+        pcall(function()
+            part:Destroy()
+        end)
+    end
+end
+
+-- Bloqueia quando aparecer no Workspace
+workspace.DescendantAdded:Connect(function(obj)
+    for _, rule in ipairs(blacklist) do
+        if obj.Name == rule.Name and obj.ClassName == rule.Class then
+            neutralize(obj)
+        end
+    end
+end)
+
+-- Bloqueia os que já existem
+for _, obj in ipairs(workspace:GetDescendants()) do
+    for _, rule in ipairs(blacklist) do
+        if obj.Name == rule.Name and obj.ClassName == rule.Class then
+            neutralize(obj)
+        end
+    end
+end
+
+-- Loop extra pra pegar nil-instances clonados
+task.spawn(function()
+    while task.wait(0.25) do
+        for _, rule in ipairs(blacklist) do
+            for _, v in next, getnilinstances() do
+                if v.Name == rule.Name and v.ClassName == rule.Class then
+                    neutralize(v)
+                end
+            end
+        end
+    end
+end)
+
+-- Proteção extra no Humanoid
+LocalPlayer.CharacterAdded:Connect(function(char)
+    local hum = char:WaitForChild("Humanoid")
+    hum.Touched:Connect(function(hit)
+        for _, rule in ipairs(blacklist) do
+            if hit.Name == rule.Name and hit.ClassName == rule.Class then
+                neutralize(hit)
+            end
+        end
+    end)
+end)
